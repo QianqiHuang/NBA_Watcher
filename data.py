@@ -1,9 +1,27 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import numpy as np
 from urllib.parse import urljoin
+import time
 
+import mysql.connector
+from sqlalchemy import create_engine
 
+host = 'localhost'
+username = 'root'
+password = 'woaitetsu0511'
+database = 'db_final_proj'
+
+engine = create_engine(f'mysql+mysqlconnector://{username}:{password}@{host}/{database}')
+
+mydb = mysql.connector.connect(
+  host=host,
+  user=username,
+  password=password,
+  database=database
+)
+mycursor = mydb.cursor()
 
 def parse_player_basic_info(index_letter, filter_year=2012):
     """
@@ -18,19 +36,11 @@ def parse_player_basic_info(index_letter, filter_year=2012):
     root_url = 'https://www.basketball-reference.com/players/'
     url = urljoin(root_url, index_letter) #'https://www.basketball-reference.com/players/a/'
 
-    # Send a request to the URL
     response = requests.get(url)
-
-    # Parse the HTML content of the page
+    # print(response)
     soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Find the table in the HTML
     table = soup.find('table', {'id': 'players'})
-
-    # Extract the rows from the table
     rows = table.find_all('tr')
-
-    # List to store row data
     data = []
 
     # Extract data from each row
@@ -57,21 +67,27 @@ def parse_player_basic_info(index_letter, filter_year=2012):
                 data.append(row_data)
 
     # Define column names
-    columns = ['Player Name', 'Player Href', 'Player Unique ID', 'Year Min', 'Year Max', 'Position', 'Height', 'Weight', 'Birth Date', 'Colleges']
+    columns = ['Player_Name', 'Player_Href', 'Player_ID', 'Year_Min', 'Year_Max', 'Position', 'Height', 'Weight', 'Birth_Date', 'Colleges']
 
     # Create a DataFrame
     df = pd.DataFrame(data, columns=columns)
 
     return df
 
-def parse_player_game_performance(player_href, year_min, year_max):
+def parse_player_game_performance(player_href, year_min, year_max=2024, filter_year=2012):
     """
     input:
         player_href: can be obtained from player table, e.g.:/players/a/abrinal01
-        filter_year: int,  only extract player active after given year
+        year_min: int,  season start to play
+        year_max: int, season stop to play, default is current season 2023-2024
+        filter_year: int, only extracted season data after filter_year
     output:
         dataframe
     """
+    if year_min < filter_year:
+        year_min = filter_year
+
+    columns = ['Game_ID', 'Season', 'Rk', 'G', 'Date', 'Age', 'Tm', 'Location', 'Opp', 'Result', 'GS', 'MP', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', 'ORB', 'DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'GmSc', '+/-']
     data = []
     root_url = 'https://www.basketball-reference.com' + player_href + '/' # https://www.basketball-reference.com/players/j/jamesle01/gamelog/2004
     url = urljoin(root_url,  "gamelog/")
@@ -92,23 +108,71 @@ def parse_player_game_performance(player_href, year_min, year_max):
                 else:
                     game_id = game_id + row_data[6] + '@' + row_data[4]
                 row_data.insert(0, game_id)
+                row_data.insert(1, year)
                 data.append(row_data)
 
-        # Define column names (list them as they appear in the table)
-    columns = ['Game_ID', 'Rk', 'G', 'Date', 'Age', 'Tm', 'Location', 'Opp', 'Result', 'GS', 'MP', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', 'ORB', 'DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'GmSc', '+/-']
     df = pd.DataFrame(data, columns=columns)
     df.drop(columns=['Rk', 'G'])
-    return df
+    stats = ['FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', 'ORB', 'DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'GmSc']
+    df[stats] = df[stats].astype(float)
+    stats_average_values = df.groupby(['Season', 'Tm'])[stats].mean()
+
+    return df, stats_average_values
+
+def parse_player_game_performance_per_season(player_href, sql_table_name):
+    root_url = 'https://www.basketball-reference.com' + player_href + '.html'
+    response = requests.get(root_url)
+    # Assuming `html_content` is the HTML string that contains the table
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Find the table in the HTML
+    table = soup.find('table', {'id': 'per_game'})
+
+    # Parse the table headers
+    headers = [header.text for header in table.find_all('th') if header.get('data-tip')]
+
+    # Parse the rows
+    rows = []
+    for row in table.find_all('tr'):
+        print(row.get('class'))
+        if row.get('class') and "full_table" in row.get('class'): 
+            cells = row.find_all(['th', 'td'])
+            rows.append([cell.text for cell in cells])
+
+    # Create a pandas DataFrame
+    df = pd.DataFrame(rows, columns=headers)
+    df.insert(0, 'Player Href', player_href)
+    df.to_sql(sql_table_name, con=engine, if_exists='append', index=False, chunksize=1000)
 
 
-# Save to CSV
+
+def parse_all_player(sql_table_name):
+    # parse all players' basic information and drop into mysql
+    for index in range(0, 26):
+        letter = chr(ord('a') + index)
+        print('working on ', letter)
+        time.sleep(5)
+        df_cur_letter = parse_player_basic_info(letter)
+        df_cur_letter.to_sql(sql_table_name, con=engine, if_exists='append', index=False, chunksize=1000)
+    
+def parse_all_player_season_performance(sql_table_name):
+
+    mycursor.execute("SELECT Player_Href FROM Player")
+    all_player_href = mycursor.fetchall()
+    for player_href in all_player_href:
+        print('working on ', player_href[0])
+        time.sleep(1)
+        # print(player_href)
+        parse_player_game_performance_per_season(player_href[0], sql_table_name)
 
 
 
+# response = requests.get( "https://www.basketball-reference.com/players/j/jamesle01/gamelog/2004")
+# df = parse_player_game_performance("/players/j/jamesle01", 2022, 2024)
+# df.to_csv('test.csv')
 
-response = requests.get( "https://www.basketball-reference.com/players/j/jamesle01/gamelog/2004")
-df = parse_player_game_performance("/players/j/jamesle01", 2022, 2024)
-df.to_csv('test.csv')
-
-df = parse_player_basic_info('a')
-df.to_csv('players_data.csv')
+# df = parse_player_basic_info('a')
+# df.to_csv('players_data.csv')
+# parse_all_player('Player')
+# parse_player_game_performance_per_season("/players/j/jamesle01")
+parse_all_player_season_performance('Player_Season_Performance')
