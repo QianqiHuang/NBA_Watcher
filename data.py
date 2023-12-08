@@ -134,7 +134,7 @@ def parse_player_game_performance_per_season(player_href, sql_table_name):
     # Parse the rows
     rows = []
     for row in table.find_all('tr'):
-        print(row.get('class'))
+        # print(row.get('class'))
         if row.get('class') and "full_table" in row.get('class'): 
             cells = row.find_all(['th', 'td'])
             rows.append([cell.text for cell in cells])
@@ -159,9 +159,10 @@ def parse_all_player_season_performance(sql_table_name):
 
     mycursor.execute("SELECT Player_Href FROM Player")
     all_player_href = mycursor.fetchall()
-    for player_href in all_player_href:
+    for index, player_href in enumerate(all_player_href[372+1165:]):
         print('working on ', player_href[0])
-        time.sleep(1)
+        print('current index', index)
+        time.sleep(3)
         # print(player_href)
         parse_player_game_performance_per_season(player_href[0], sql_table_name)
 
@@ -176,3 +177,8 @@ def parse_all_player_season_performance(sql_table_name):
 # parse_all_player('Player')
 # parse_player_game_performance_per_season("/players/j/jamesle01")
 parse_all_player_season_performance('Player_Season_Performance')
+
+
+# mycursor.execute("SELECT Player_Href FROM Player")
+# all_player_href = mycursor.fetchall()
+# print(all_player_href[372])
