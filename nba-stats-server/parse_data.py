@@ -145,6 +145,31 @@ def parse_player_game_performance_per_season(player_href, sql_table_name):
     df.to_sql(sql_table_name, con=engine, if_exists='append', index=False, chunksize=1000)
 
 
+def parse_player_avatar():
+
+    mycursor.execute("SELECT Player_Href FROM Player")
+    all_player_href = mycursor.fetchall()
+    for index, player_href in enumerate(all_player_href):
+        print('working on ', player_href[0])
+        print('current index', index)
+        time.sleep(3)
+        # print(player_href)
+        root_url = 'https://www.basketball-reference.com' + player_href[0] + '.html'
+        response = requests.get(root_url)
+        # Assuming `html_content` is the HTML string that contains the table
+        soup = BeautifulSoup(response.text, 'html.parser')
+        image_element = soup.find('img', {'itemscope': 'image'})
+
+        # Check if the image element exists
+        if image_element:
+            # Get the src attribute value
+            image_url = image_element['src']
+            print(image_url)
+            update_query = "UPDATE Player SET avatar_url = %s WHERE Player_Href = %s"
+            values = (image_url, player_href[0])
+            mycursor.execute(update_query, values)
+            mydb.commit()
+
 
 def parse_all_player(sql_table_name):
     # parse all players' basic information and drop into mysql
@@ -176,9 +201,11 @@ def parse_all_player_season_performance(sql_table_name):
 # df.to_csv('players_data.csv')
 # parse_all_player('Player')
 # parse_player_game_performance_per_season("/players/j/jamesle01")
-parse_all_player_season_performance('Player_Season_Performance')
+# parse_all_player_season_performance('Player_Season_Performance')
 
 
 # mycursor.execute("SELECT Player_Href FROM Player")
 # all_player_href = mycursor.fetchall()
 # print(all_player_href[372])
+
+parse_player_avatar()
