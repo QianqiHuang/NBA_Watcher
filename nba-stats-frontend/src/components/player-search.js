@@ -1,33 +1,15 @@
 import MagnifyingGlassIcon from '@heroicons/react/24/solid/MagnifyingGlassIcon';
 import { Card, InputAdornment, OutlinedInput, 
-  SvgIcon, MenuItem, FormControl, Select, Menu } from '@mui/material';
+  SvgIcon, MenuItem, Menu } from '@mui/material';
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { REACT_APP_BASE_URL } from '../const';
 
-export const PlayerSearch = ({onSeasonUpdate, onSearchPlayer}) => {
-  const [filter, setFilter] = useState('');
+export const PlayerSearch = ({onSearchPlayer}) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const inputRef = useRef(null);  // Create a ref
-
-
-  const getSeasonOptions = () => {
-    const currentYear = 2023
-    const seasons = [];
-    for (let i = 0; i < 10; i++) {
-      seasons.push(`${currentYear - i - 1}-${currentYear - i-2000}`);
-    }
-    return seasons;
-  };
-  
-  const seasons = getSeasonOptions(); 
-
-  const handleFilterChange = (event) => {
-    setFilter(event.target.value);
-    onSeasonUpdate(event.target.value);
-  };
 
   const [inputValue, setInputValue] = useState('');
 
@@ -91,32 +73,19 @@ export const PlayerSearch = ({onSeasonUpdate, onSearchPlayer}) => {
         inputProps={{
           onKeyPress: handleEnterPress
         }}
-        sx={{ width: '100%', maxWidth: 'calc(100% - 300px)' }} // Adjust the maxWidth to leave space for the Select
+        sx={{ width: '100%' }} // Adjust the maxWidth to leave space for the Select
       />
-      <FormControl sx={{ minWidth: 200 }}>
-        <Select
-          value={filter}
-          onChange={handleFilterChange}
-          displayEmpty
-          inputProps={{ 'aria-label': 'Without label' }}
-        >
-          <MenuItem disabled value="">
-            <em>Season 2023-2024</em>
-          </MenuItem>
-          {seasons.map((season) => (
-        <MenuItem key={season} value={season}>{'Season ' + season}</MenuItem>
-      ))}
-        </Select>
-      </FormControl>
 
       {showDropdown && (
         <Menu 
+        sx={{ width: '100%' }} 
         open={showDropdown}
         anchorEl={anchorEl}
         onClose={handleClose}
         >
             {searchResults.map((player, index) => (
               <MenuItem
+              sx={{ width: '100%' }} 
               key={index} value={player}
               onClick={(event) => handleMenuClick(event, index)}>{player.player_name}</MenuItem>
             ))}

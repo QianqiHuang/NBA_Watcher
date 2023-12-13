@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { REACT_APP_BASE_URL } from '../const';
-// material-ui
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
-// third-party
 import ReactApexChart from 'react-apexcharts';
 
-// chart options
 const areaChartOptions = {
     chart: {
         height: 450,

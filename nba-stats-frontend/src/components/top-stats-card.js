@@ -1,20 +1,13 @@
-import { formatDistanceToNow } from 'date-fns';
 import PropTypes from 'prop-types';
-import ArrowRightIcon from '@heroicons/react/24/solid/ArrowRightIcon';
-import EllipsisVerticalIcon from '@heroicons/react/24/solid/EllipsisVerticalIcon';
 import {
     Box,
-    Button,
     Card,
-    CardActions,
     CardHeader,
     Divider,
-    IconButton,
     List,
     ListItem,
     ListItemAvatar,
     ListItemText,
-    SvgIcon,
     Typography
 } from '@mui/material';
 
@@ -125,20 +118,7 @@ export const TopStatsCard = (props) => {
                 })}
             </List>
             <Divider />
-            {/* <CardActions sx={{ justifyContent: 'flex-end' }}>
-                <Button
-                    color="inherit"
-                    endIcon={(
-                        <SvgIcon fontSize="small">
-                            <ArrowRightIcon />
-                        </SvgIcon>
-                    )}
-                    size="small"
-                    variant="text"
-                >
-                    View all
-                </Button>
-            </CardActions> */}
+
         </Card>
     );
 };

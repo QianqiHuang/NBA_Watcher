@@ -2,13 +2,12 @@ import {
   Box,
   Button,
   Container,
-  Pagination,
   Stack,
-  SvgIcon,
   Typography,
   Unstable_Grid2 as Grid,
   Card,
-  CardHeader
+  CardHeader,
+  CardContent
 } from '@mui/material';
 import { PlayerSearch } from '../components/player-search';
 import { Layout as DashboardLayout } from './layout';
@@ -20,6 +19,9 @@ import IncomeAreaChart from '../components/player-stat-plot';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { REACT_APP_BASE_URL } from '../const';
+import { FilterBar } from '../components/stats-filter';
+import { PlayersTable } from '../components/player-table';
+import { ImprovementCard } from '../components/player-improvement';
 
 
 const Page = () => {
@@ -64,12 +66,18 @@ const Page = () => {
   const [selectedStats, setSelectedStats] = useState(stats); // Initial selected stats
   const [selectedSeason, setSelectedSeason] = useState('2023-24')
   const [statsData, setStatsData] = useState({});
+  const [selectPlayer, setSelectPlayer] = useState([]);
 
   const [ifSearch, setIfSearch] = useState(false);
   const [playerInfo, setPlayerInfo] = useState(null);
 
+
   const handleSelectedSeason = (data) => {
     setSelectedSeason(data);
+  };
+
+  const handleSelectedPlayers = (data) => {
+    setSelectPlayer(data);
   };
 
   const handleSearchPlayer = (data) => {
@@ -80,6 +88,10 @@ const Page = () => {
     } else {
       setIfSearch(false);
     }
+  }
+
+  const handleClickHeader = () => {
+    setIfSearch(false);
   }
 
   useEffect(() => {
@@ -121,33 +133,80 @@ const Page = () => {
               spacing={4}
             >
               <Stack spacing={1}>
-                <Typography variant="h4">
-                  NBA Players Stats
-                </Typography>
+                <Button onClick={handleClickHeader}>
+
+                  <Typography variant="h4">
+                    NBA Players Stats
+                  </Typography>
+                </Button>
+
               </Stack>
             </Stack>
             <PlayerSearch
-              onSeasonUpdate={handleSelectedSeason}
               onSearchPlayer={handleSearchPlayer} />
+
             {(!ifSearch) ?
-              (<Grid
-                container
-                spacing={3}
-              >
-                {stats.map((statsItem, index) => (
-                  <Grid
-                    xs={12}
-                    md={6}
-                    lg={4}
-                    key={index}
-                  >
-                    <TopStatsCard
-                      title={statsItem.name}
-                      players={statsData[statsItem.col_name]}
-                    />
-                  </Grid>
-                ))}
-              </Grid>) :
+              (<>
+                <FilterBar
+                  onSelectedPlayer={handleSelectedPlayers}
+                  onSeasonUpdate={handleSelectedSeason} />
+                <PlayersTable
+                  items={selectPlayer} />
+                <Card>
+                  <CardHeader title={'Most Improved Player'} />
+                  <CardContent>
+
+
+                    <Grid container
+                      spacing={3}>
+                      <Grid item
+                        xs={12}
+                        md={6}
+                        lg={4}>
+                        <ImprovementCard
+                          stats={'pts'}
+                          stats_name={'Average Points'} /></Grid>
+                      <Grid item
+                        xs={12}
+                        md={6}
+                        lg={4}>
+                        <ImprovementCard
+                          stats={'trb'}
+                          stats_name={'Average Rebounds'} /></Grid>
+                      <Grid item
+                        xs={12}
+                        md={6}
+                        lg={4}>
+                        <ImprovementCard
+                          stats={'ast'}
+                          stats_name={'Average Assists'} /></Grid>
+                    </Grid>
+                  </CardContent>
+
+                </Card>
+
+
+
+                <Grid
+                  container
+                  spacing={3}
+                >
+                  {stats.map((statsItem, index) => (
+                    <Grid
+                      xs={12}
+                      md={6}
+                      lg={4}
+                      key={index}
+                    >
+                      <TopStatsCard
+                        title={statsItem.name + ' Top 5'}
+                        players={statsData[statsItem.col_name]}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+
+              </>) :
 
               (<Grid
                 container
@@ -159,17 +218,18 @@ const Page = () => {
                   lg={4} >
                   <PlayerProfile
                     player={playerInfo}
-                    season={selectedSeason} />
+                    season={'2023-24'} />
                 </Grid>
                 <Grid item xs={12}
                   md={6}
                   lg={8}>
                   <Card sx={{
-            height: 560}} >
-                    <CardHeader title="Basic Stats"/>
+                    height: 560
+                  }} >
+                    <CardHeader title="Basic Stats" />
                     <IncomeAreaChart
-                    player={playerInfo}
-                    season={selectedSeason}
+                      player={playerInfo}
+                      season={selectedSeason}
                     />
 
                   </ Card>
