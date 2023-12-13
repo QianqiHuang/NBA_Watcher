@@ -1,6 +1,8 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from models import db, PlayerStat, PlayerInfo, TeamInfo  # This would be your SQLAlchemy model
 from flask_cors import CORS
+from sqlalchemy import desc
+
 
 
 host = 'localhost'
@@ -25,6 +27,57 @@ def get_season_stats(season, stats):
         top_players = get_top_players_by_stat(season, stat)
         stats_data[stat] = [player.to_dict_item(stat) for player in top_players]
     return jsonify(stats_data)
+
+
+@app.route('/stats/<string:season>/range/')
+def get_players_by_stat_range(season):
+    min_pts = request.args.get('min_pts', type=float)
+    max_pts = request.args.get('max_pts', type=float)
+    min_ast = request.args.get('min_ast', type=float)
+    max_ast = request.args.get('max_ast', type=float)
+    min_trb = request.args.get('min_trb', type=float)
+    max_trb = request.args.get('max_trb', type=float)
+
+        # Start the query with a join
+    query = db.session.query(PlayerStat, PlayerInfo).join(
+        PlayerInfo, PlayerStat.player_href == PlayerInfo.player_href
+    )  
+
+    # Filter by season if provided
+    if season:
+        query = query.filter(PlayerStat.season == season)
+        
+
+    # Apply filters based on the provided stat ranges
+    if min_pts is not None:
+        query = query.filter(PlayerStat.pts >= min_pts)
+    if max_pts is not None:
+        query = query.filter(PlayerStat.pts <= max_pts)
+
+    if min_ast is not None:
+        query = query.filter(PlayerStat.ast >= min_ast)
+    if max_ast is not None:
+        query = query.filter(PlayerStat.ast <= max_ast)
+
+    if min_trb is not None:
+        query = query.filter(PlayerStat.trb >= min_trb)
+    if max_trb is not None:
+        query = query.filter(PlayerStat.trb <= max_trb)
+
+    players_within_range = query.all()
+
+    # Serialize the results into a JSON-friendly format
+    players_data = []
+    for player_stat, player_info in players_within_range:
+        player_data = player_stat.to_dict()
+        player_data.update({
+            'player_name': player_info.player_name,
+            'avatar_url': player_info.avatar_url,
+        })
+        players_data.append(player_data)
+
+    return jsonify(players_data)
+
 
 @app.route('/stats/player/<string:player_id>')
 def get_player_performance(player_id):
@@ -75,8 +128,69 @@ def get_season(season):
         return jsonify(player.to_dict())
     else:
         return jsonify({"message": "Season not found"}), 404
-
     
+
+@app.route('/most_improved_player')
+def get_most_improved_player():
+    # Get the stat parameter from the query string
+    stat = request.args.get('stat', 'pts')  # Default to 'pts' if not provided
+
+    # Validate the stat parameter
+    allowed_stats = ['pts', 'ast', 'trb', 'stl', 'blk']  # List other stats as needed
+    if stat not in allowed_stats:
+        return 'Invalid statistic', 400
+
+    # Subquery for '22-23' season
+    stat_22_23 = db.session.query(
+        PlayerStat.player_href,
+        getattr(PlayerStat, stat).label(f'stat_22_23')
+    ).filter(
+        PlayerStat.season == '2022-23'
+    ).filter(
+        PlayerStat.mp >= 10
+    ).subquery()
+
+    # Subquery for '23-24' season
+    stat_23_24 = db.session.query(
+        PlayerStat.player_href,
+        getattr(PlayerStat, stat).label(f'stat_23_24')
+    ).filter(
+        PlayerStat.season == '2023-24'
+    ).filter(
+        PlayerStat.mp >= 10
+    ).subquery()
+
+    # Main query to calculate improvement
+    query = db.session.query(
+        PlayerInfo.player_href,
+        PlayerInfo.player_name,
+        PlayerInfo.avatar_url,
+        stat_23_24.c.stat_23_24,
+        stat_22_23.c.stat_22_23,
+        ((stat_23_24.c.stat_23_24 - stat_22_23.c.stat_22_23) / stat_22_23.c.stat_22_23).label('improvement_percentage')
+    ).join(
+        stat_22_23, PlayerInfo.player_href == stat_22_23.c.player_href
+    ).join(
+        stat_23_24, PlayerInfo.player_href == stat_23_24.c.player_href
+    ).filter(
+        stat_22_23.c.stat_22_23 != 0
+    ).order_by(
+        desc('improvement_percentage')
+    ).limit(1)
+
+    most_improved_players = query.all()
+
+    players_data = [{
+        'avatar_url':player.avatar_url,
+        'player_href': player.player_href,
+        'player_name': player.player_name,
+        'stat_23_24': getattr(player, 'stat_23_24'),
+        'stat_22_23': getattr(player, 'stat_22_23'),
+        'improvement_percentage': getattr(player, 'improvement_percentage')
+    } for player in most_improved_players]
+
+    return jsonify(players_data[0])
+
 def get_top_players_by_stat(season, stat):
     return PlayerStat.query.filter_by(season=season)\
         .order_by(getattr(PlayerStat, stat).desc())\

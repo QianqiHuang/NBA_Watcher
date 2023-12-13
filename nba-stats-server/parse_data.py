@@ -84,6 +84,7 @@ def parse_player_game_performance(player_href, year_min, year_max=2024, filter_y
     output:
         dataframe
     """
+    year_min = int(year_min)
     if year_min < filter_year:
         year_min = filter_year
 
@@ -113,11 +114,11 @@ def parse_player_game_performance(player_href, year_min, year_max=2024, filter_y
 
     df = pd.DataFrame(data, columns=columns)
     df.drop(columns=['Rk', 'G'])
-    stats = ['FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', 'ORB', 'DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'GmSc']
-    df[stats] = df[stats].astype(float)
-    stats_average_values = df.groupby(['Season', 'Tm'])[stats].mean()
+    # stats = ['FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', 'ORB', 'DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'GmSc']
+    # df[stats] = df[stats].astype(float)
+    # stats_average_values = df.groupby(['Season', 'Tm'])[stats].mean()
 
-    return df, stats_average_values
+    return df
 
 def parse_player_game_performance_per_season(player_href, sql_table_name):
     root_url = 'https://www.basketball-reference.com' + player_href + '.html'
@@ -191,7 +192,18 @@ def parse_all_player_season_performance(sql_table_name):
         # print(player_href)
         parse_player_game_performance_per_season(player_href[0], sql_table_name)
 
+def parse_all_player_game_performance(sql_table_name):
 
+    mycursor.execute("SELECT Player_Href, Year_min FROM Player")
+    all_player_href = mycursor.fetchall()
+    for index, player_href in enumerate(all_player_href[57:]):
+        print('working on ', player_href[0])
+        # print(player_href[1])
+        print('current index', index)
+        time.sleep(3)
+        # print(player_href)
+        df = parse_player_game_performance(player_href[0], player_href[1])
+        df.to_sql(sql_table_name, con=engine, if_exists='append', index=False, chunksize=1000)
 
 # response = requests.get( "https://www.basketball-reference.com/players/j/jamesle01/gamelog/2004")
 # df = parse_player_game_performance("/players/j/jamesle01", 2022, 2024)
@@ -208,4 +220,6 @@ def parse_all_player_season_performance(sql_table_name):
 # all_player_href = mycursor.fetchall()
 # print(all_player_href[372])
 
-parse_player_avatar()
+# parse_player_avatar()
+
+parse_all_player_game_performance('Game_Performance')
