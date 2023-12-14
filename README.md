@@ -15,7 +15,7 @@ Install these libraries using `pip`:
 
 ```sh
 cd nba-stats-server
-pip install Flask Flask-CORS Flask-SQLAlchemy SQLAlchemy mysql-connector-python
+pip install -r requirement.txt
 ```
 
 ### set up frontend

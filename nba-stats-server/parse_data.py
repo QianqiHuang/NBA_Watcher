@@ -1,17 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import numpy as np
 from urllib.parse import urljoin
 import time
 
 import mysql.connector
 from sqlalchemy import create_engine
 
-host = 'localhost'
-username = 'root'
-password = 'woaitetsu0511'
-database = 'db_final_proj'
+host = 'database-1.chpdbqbkfh2m.us-east-2.rds.amazonaws.com'
+username = 'admin'
+password = 'dbfinalproj'
+database = 'NBA_watcher'
 
 engine = create_engine(f'mysql+mysqlconnector://{username}:{password}@{host}/{database}')
 
@@ -196,7 +195,7 @@ def parse_all_player_game_performance(sql_table_name):
 
     mycursor.execute("SELECT Player_Href, Year_min FROM Player")
     all_player_href = mycursor.fetchall()
-    for index, player_href in enumerate(all_player_href[57:]):
+    for index, player_href in enumerate(all_player_href[57+20:]):
         print('working on ', player_href[0])
         # print(player_href[1])
         print('current index', index)

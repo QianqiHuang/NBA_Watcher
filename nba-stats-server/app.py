@@ -5,10 +5,10 @@ from sqlalchemy import desc
 
 
 
-host = 'localhost'
-username = 'root'
-password = 'woaitetsu0511'
-database = 'db_final_proj'
+host = 'database-1.chpdbqbkfh2m.us-east-2.rds.amazonaws.com'
+username = 'admin'
+password = 'dbfinalproj'
+database = 'NBA_watcher'
 
 
 app = Flask(__name__)
