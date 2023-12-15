@@ -130,8 +130,10 @@ def get_season(season):
         return jsonify({"message": "Season not found"}), 404
     
 
-@app.route('/most_improved_player')
-def get_most_improved_player():
+@app.route('/<string:seasons>/most_improved_player')
+def get_most_improved_player(seasons):
+    last_season = seasons.split(',')[0]
+    next_season = seasons.split(',')[1]
     # Get the stat parameter from the query string
     stat = request.args.get('stat', 'pts')  # Default to 'pts' if not provided
 
@@ -145,7 +147,7 @@ def get_most_improved_player():
         PlayerStat.player_href,
         getattr(PlayerStat, stat).label(f'stat_22_23')
     ).filter(
-        PlayerStat.season == '2022-23'
+        PlayerStat.season == last_season
     ).filter(
         PlayerStat.mp >= 10
     ).subquery()
@@ -155,7 +157,7 @@ def get_most_improved_player():
         PlayerStat.player_href,
         getattr(PlayerStat, stat).label(f'stat_23_24')
     ).filter(
-        PlayerStat.season == '2023-24'
+        PlayerStat.season == next_season
     ).filter(
         PlayerStat.mp >= 10
     ).subquery()
