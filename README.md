@@ -92,6 +92,20 @@ npm start
 ```
 4. Access the frontend in a web browser at `http://localhost:3000`.
 
+## Demo
+- **Player Search**
+  - ![Player Search](https://i.imgur.com/bDGYWD1.png)
+- **Seasonal Data**
+  - ![Seasonal Data](https://i.imgur.com/8LzP4Xq.png)
+- **Interactive Filters**
+  - ![Interactive Filters](https://i.imgur.com/V0ssFmo.png)
+- **Top Performers**
+  - ![Top Performers](https://i.imgur.com/IvU8XT8.png)
+- **Most Improved Players**
+  - ![Most Improved Players](https://i.imgur.com/tReLh4w.png)
+
+
+
 ## Contributing
 
 Contributions are what make the development community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
