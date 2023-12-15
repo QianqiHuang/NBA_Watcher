@@ -155,8 +155,6 @@ const Page = () => {
                 <Card>
                   <CardHeader title={'Most Improved Player'} />
                   <CardContent>
-
-
                     <Grid container
                       spacing={3}>
                       <Grid item
@@ -165,21 +163,24 @@ const Page = () => {
                         lg={4}>
                         <ImprovementCard
                           stats={'pts'}
-                          stats_name={'Average Points'} /></Grid>
+                          stats_name={'Average Points'}
+                          season={selectedSeason} /></Grid>
                       <Grid item
                         xs={12}
                         md={6}
                         lg={4}>
                         <ImprovementCard
                           stats={'trb'}
-                          stats_name={'Average Rebounds'} /></Grid>
+                          stats_name={'Average Rebounds'}
+                          season={selectedSeason} /></Grid>
                       <Grid item
                         xs={12}
                         md={6}
                         lg={4}>
                         <ImprovementCard
                           stats={'ast'}
-                          stats_name={'Average Assists'} /></Grid>
+                          stats_name={'Average Assists'}
+                          season={selectedSeason} /></Grid>
                     </Grid>
                   </CardContent>
 
