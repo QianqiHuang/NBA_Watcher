@@ -22,7 +22,7 @@
   </p>
 </div>
 
-![landing](https://imgur.com/a/I0K5nUc.png)
+![landing](https://i.imgur.com/qdSch8a.png)
 
 ## About The Project
 [Our Project is live!!](http://nbawatcher.s3-website.us-east-2.amazonaws.com/)\

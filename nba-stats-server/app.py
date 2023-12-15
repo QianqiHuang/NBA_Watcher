@@ -18,6 +18,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{username}:{pas
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
+@app.route('/')
+def hello_world():
+	return 'Hello World!'
+
+
 @app.route('/stats/<string:season>/<string:stats>')
 def get_season_stats(season, stats):
     stats_list = stats.split(',')
