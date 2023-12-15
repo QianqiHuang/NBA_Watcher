@@ -18,6 +18,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{username}:{pas
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
+@app.route('/')
+def hello_world():
+	return 'Hello World!'
+
+# Fetches top players by specific stats for a given season.
+# SQL Equivalent: 
+# SELECT * FROM PlayerStat WHERE season = {season} ORDER BY {stat} DESC LIMIT 10
 @app.route('/stats/<string:season>/<string:stats>')
 def get_season_stats(season, stats):
     stats_list = stats.split(',')
@@ -28,7 +35,11 @@ def get_season_stats(season, stats):
         stats_data[stat] = [player.to_dict_item(stat) for player in top_players]
     return jsonify(stats_data)
 
-
+# Retrieves players whose stats fall within specified ranges for a given season.
+# SQL Equivalent: 
+# SELECT * FROM PlayerStat JOIN PlayerInfo ON PlayerStat.player_href = PlayerInfo.player_href 
+# WHERE season = {season} AND pts BETWEEN {min_pts} AND {max_pts} AND BETWEEN {min_ast} AND {max_ast}
+# BETWEEN {min_trb} AND {max_trb}
 @app.route('/stats/<string:season>/range/')
 def get_players_by_stat_range(season):
     min_pts = request.args.get('min_pts', type=float)
@@ -78,7 +89,9 @@ def get_players_by_stat_range(season):
 
     return jsonify(players_data)
 
-
+# Fetches performance details of a player based on player_id.
+# SQL Equivalent: 
+# SELECT * FROM PlayerStat WHERE player_href = '/players/{player_id[0]}/{player_id}'
 @app.route('/stats/player/<string:player_id>')
 def get_player_performance(player_id):
     player_href = '/players/' + player_id[0] +'/' + player_id
@@ -88,6 +101,9 @@ def get_player_performance(player_id):
     else:
         return jsonify({"message": "Player not found"}), 404
 
+# Retrieves information about a player by player_id.
+# SQL Equivalent: 
+# SELECT * FROM PlayerInfo WHERE player_ID = {player_id}
 @app.route('/player/<string:player_id>')
 def get_player_info(player_id):
     player = PlayerInfo.query.filter_by(player_ID=player_id).first()
@@ -95,12 +111,20 @@ def get_player_info(player_id):
         return jsonify(player.to_dict())
     else:
         return jsonify({"message": "Player not found"}), 404
-    
+
+# Searches for players by name.
+# SQL Equivalent: 
+# SELECT * FROM PlayerInfo WHERE player_name LIKE '%{player_name}%'
 @app.route('/search/<string:player_name>')
 def search_player(player_name):
     players = PlayerInfo.query.filter(PlayerInfo.player_name.like(f'%{player_name}%')).all()
     return jsonify([player.to_dict() for player in players])
 
+
+# Provides team history for a given player.
+# SQL Equivalent: 
+# SELECT PlayerStat.*, TeamInfo.* FROM PlayerStat JOIN TeamInfo 
+# ON PlayerStat.tm = TeamInfo.abbreviation WHERE PlayerStat.player_href = '/players/{player_id[0]}/{player_id}'
 @app.route('/player/team/<string:player_id>')
 def search_player_teams(player_id):
     player_href = '/players/' + player_id[0] +'/' + player_id
@@ -120,7 +144,9 @@ def search_player_teams(player_id):
     else:
         return jsonify({"message": "Player not found"}), 404
 
-
+# Retrieves data for a specific season.
+# SQL Equivalent: 
+# SELECT * FROM PlayerStat WHERE season = {season}
 @app.route('/season/<string:season>')
 def get_season(season):
     player = PlayerStat.query.filter_by(season=season).first()
@@ -129,7 +155,14 @@ def get_season(season):
     else:
         return jsonify({"message": "Season not found"}), 404
     
-
+# Identifies the most improved player over two seasons based on a specific stat.
+# SQL Equivalent: 
+# SELECT PlayerInfo.*, ((stat_23_24 - stat_22_23) / stat_22_23) AS improvement_percentage 
+# FROM PlayerInfo JOIN (SELECT player_href, {stat} AS stat_23_24 FROM PlayerStat WHERE season = {next_season} AND mp >= 10) 
+# ON PlayerInfo.player_href = stat_23_24.player_href 
+# JOIN (SELECT player_href, {stat} AS stat_22_23 FROM PlayerStat WHERE season = {last_season} AND mp >= 10) 
+# ON PlayerInfo.player_href = stat_22_23.player_href 
+# WHERE stat_22_23 != 0 ORDER BY improvement_percentage DESC LIMIT 1
 @app.route('/<string:seasons>/most_improved_player')
 def get_most_improved_player(seasons):
     last_season = seasons.split(',')[0]
